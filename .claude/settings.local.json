@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import xlrd; print\\('xlrd', xlrd.__version__\\)\")",
+      "Bash(python3 -c \"import openpyxl; print\\('openpyxl ok'\\)\")",
+      "Bash(python3 -c \"import pandas; print\\('pandas', pandas.__version__\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(pip list *)"
+    ]
+  }
+}
