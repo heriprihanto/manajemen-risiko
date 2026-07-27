@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
@@ -74,17 +75,32 @@ def kuesioner(session: Session = Depends(get_session)):
     ]
 
 
-def _find_by_uid(session: Session, uid: str, tahun: int) -> CeeResponden | None:
-    """Submission survei milik satu akun Google pada satu tahun (lintas OPD).
+def _norm_email(email: str | None) -> str | None:
+    return (email or "").strip().lower() or None
 
-    Satu akun hanya boleh mengisi survei satu kali per tahun, sehingga pencarian
-    tidak difilter per-OPD.
+
+def _find_survei(
+    session: Session, email: str | None, uid: str | None, tahun: int
+) -> CeeResponden | None:
+    """Submission survei untuk satu tahun (lintas OPD), dicocokkan per EMAIL.
+
+    Aturan: satu email hanya boleh mengisi survei satu kali per tahun. uid
+    dipakai sebagai pencocokan tambahan (mis. bila email lama sempat berbeda),
+    tetapi email adalah kunci utama.
     """
+    email_norm = _norm_email(email)
+    conds = []
+    if email_norm:
+        conds.append(func.lower(CeeResponden.email) == email_norm)
+    if uid:
+        conds.append(CeeResponden.firebase_uid == uid)
+    if not conds:
+        return None
     return session.exec(
         select(CeeResponden).where(
-            CeeResponden.firebase_uid == uid,
             CeeResponden.tahun == tahun,
             CeeResponden.sumber == "survei",
+            or_(*conds),
         )
     ).first()
 
@@ -107,10 +123,10 @@ def survey_status(
 ):
     """Status pengisian survei akun ini pada satu tahun.
 
-    Karena satu akun hanya boleh mengisi sekali per tahun, status `submitted`
+    Karena satu email hanya boleh mengisi sekali per tahun, status `submitted`
     bersifat lintas-OPD (terkunci setelah submit pertama).
     """
-    resp = _find_by_uid(session, user["uid"], tahun)
+    resp = _find_survei(session, user.get("email"), user.get("uid"), tahun)
     if not resp:
         return {"submitted": False}
     jawaban = {
@@ -152,6 +168,11 @@ def submit(
     if not session.get(Opd, opd_id):
         raise HTTPException(404, "OPD tidak ditemukan")
 
+    # Email wajib — jadi kunci "satu email satu tahun".
+    email = _norm_email(user.get("email"))
+    if not email:
+        raise HTTPException(400, "Akun Google tidak memiliki email; tidak dapat mengisi survei")
+
     valid_pids = {
         p.id
         for p in session.exec(
@@ -172,37 +193,38 @@ def submit(
     if not clean:
         raise HTTPException(400, "Tidak ada jawaban yang valid (skala 1-4)")
 
-    # Satu akun Google hanya boleh mengisi survei SATU KALI per tahun (lintas OPD).
-    existing = _find_by_uid(session, user["uid"], tahun)
+    # Satu email hanya boleh mengisi survei SATU KALI per tahun (lintas OPD).
+    existing = _find_survei(session, email, user.get("uid"), tahun)
     if existing:
         opd = session.get(Opd, existing.opd_id)
         raise HTTPException(
             409,
-            f"Akun ini sudah mengisi survei Tahun {tahun} "
+            f"Email {email} sudah mengisi survei Tahun {tahun} "
             f"(OPD: {opd.nama_pd if opd else existing.opd_id}). "
-            "Setiap akun hanya dapat mengisi survei satu kali dalam satu tahun.",
+            "Setiap email hanya dapat mengisi survei satu kali dalam satu tahun.",
         )
 
     resp = CeeResponden(
         opd_id=opd_id,
         tahun=tahun,
         kode_responden=_next_kode(session, opd_id, tahun),
-        firebase_uid=user["uid"],
+        firebase_uid=user.get("uid"),
         sumber="survei",
         nama_responden=nama_responden,
-        email=user.get("email"),
+        email=email,
         jabatan=jabatan,
     )
     session.add(resp)
     try:
         session.commit()
     except IntegrityError:
-        # Pengaman balapan (race) — unique index (firebase_uid, tahun).
+        # Pengaman balapan (race) — unique index parsial (lower(email), tahun)
+        # untuk sumber='survei'. Lihat migrations/2026_07_27_cee_responden_email_unique.sql
         session.rollback()
         raise HTTPException(
             409,
-            "Akun ini sudah mengisi survei tahun ini. "
-            "Setiap akun hanya dapat mengisi survei satu kali dalam satu tahun.",
+            "Email ini sudah mengisi survei tahun ini. "
+            "Setiap email hanya dapat mengisi survei satu kali dalam satu tahun.",
         ) from None
     session.refresh(resp)
 

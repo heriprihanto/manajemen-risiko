@@ -29,6 +29,8 @@ cp .env.example .env   # bila ada; isi kredensial POSTGRES_*, SECRET_KEY, dll.
 .venv/bin/python init_db.py            # buat tabel + seed (sekali di awal)
 # migrasi kolom tambahan (idempotent):
 psql "$DATABASE_URL" -f migrations/2026_07_27_konteks_ref_columns.sql
+# unique index: satu email hanya boleh mengisi survei sekali per tahun
+psql "$DATABASE_URL" -f migrations/2026_07_27_cee_responden_email_unique.sql
 ```
 Jalankan sebagai service — **Supervisor** (utama):
 ```bash

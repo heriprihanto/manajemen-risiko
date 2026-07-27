@@ -103,3 +103,4 @@ tambahkan chaptcha pada login
 sidebar menu, background dengan gradasi
 
 text pada sidebar menu lebih kontras dengan background supaya lebih jelas terbaca
+
