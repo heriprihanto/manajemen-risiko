@@ -49,6 +49,7 @@ onMounted(load)
       <Column header="No" :style="{ width: '46px' }"><template #body="{ index }">{{ index + 1 }}</template></Column>
       <Column field="kode_risiko" header="Kode" :style="{ minWidth: '110px' }" />
       <Column field="uraian_risiko" header="Risiko Prioritas" :style="{ minWidth: '220px' }" />
+      <Column field="pemilik_risiko" header="Pemilik" :style="{ minWidth: '130px' }" />
       <Column header="Pengendalian yang Ada" :style="{ minWidth: '180px' }">
         <template #body="{ data }">{{ data.rtp?.pengendalian_ada }}</template>
       </Column>
@@ -80,7 +81,8 @@ onMounted(load)
       <div><label class="muted lbl">Rencana Tindak Pengendalian</label>
         <Textarea v-model="editing.rencana_tindak" autoResize rows="2" style="width: 100%" /></div>
       <div><label class="muted lbl">Pemilik / Penanggung Jawab</label>
-        <InputText v-model="editing.pemilik_penanggung_jawab" style="width: 100%" /></div>
+        <div class="ro-field">{{ current?.pemilik_risiko || '—' }}</div>
+        <small class="muted">Mengikuti Form 3.b — ubah pemilik di sana.</small></div>
       <div style="display: flex; gap: 12px">
         <div style="flex: 1"><label class="muted lbl">Target Waktu</label>
           <InputText v-model="editing.target_waktu" style="width: 100%" /></div>
@@ -97,4 +99,12 @@ onMounted(load)
 
 <style scoped>
 .lbl { font-size: 0.8rem; display: block; margin-bottom: 2px; }
+.ro-field {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 0.9rem;
+  min-height: 2.25rem;
+}
 </style>

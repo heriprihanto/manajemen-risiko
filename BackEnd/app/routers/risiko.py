@@ -222,7 +222,12 @@ def list_rtp(opd_id: int, tahun: int, session: Session = Depends(get_session)):
     out = []
     for r in prioritas:
         rt = rtp_map.get(r["id"])
-        out.append({**r, "rtp": rt.model_dump() if rt else None})
+        rtp = rt.model_dump() if rt else None
+        if rtp is not None:
+            # Pemilik/penanggung jawab selalu mengikuti Form 3.b (satu sumber
+            # data) — tampilkan nilai terkini meski RTP disimpan lebih dulu.
+            rtp["pemilik_penanggung_jawab"] = r.get("pemilik_risiko")
+        out.append({**r, "rtp": rtp})
     return out
 
 
@@ -233,16 +238,19 @@ def save_rtp(
     user: dict = UserDep,
 ):
     risiko_id = payload["risiko_id"]
-    guard_record(user, session.get(Risiko, risiko_id), "Risiko")
+    risiko = session.get(Risiko, risiko_id)
+    guard_record(user, risiko, "Risiko")
     obj = session.exec(
         select(RtpRisiko).where(RtpRisiko.risiko_id == risiko_id)
     ).first()
     if not obj:
         obj = RtpRisiko(risiko_id=risiko_id)
     fields = RtpRisiko.model_fields
+    # pemilik_penanggung_jawab tidak diambil dari client — selalu ikut Form 3.b.
     for k, v in payload.items():
-        if k in fields and k not in ("id", "risiko_id"):
+        if k in fields and k not in ("id", "risiko_id", "pemilik_penanggung_jawab"):
             setattr(obj, k, v)
+    obj.pemilik_penanggung_jawab = risiko.pemilik_risiko
     obj.updated_at = datetime.utcnow()
     session.add(obj)
     session.commit()

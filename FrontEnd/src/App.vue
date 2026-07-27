@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
@@ -67,6 +67,23 @@ const navGroups = [
   },
 ]
 
+// Sidebar accordion: hanya satu grup terbuka; grup berisi menu aktif dibuka.
+function activeGroupLabel() {
+  const g = navGroups.find((grp) => grp.items.some((it) => it[0] === route.name))
+  return g ? g.label : navGroups[0].label
+}
+const openGroup = ref(activeGroupLabel())
+function toggleGroup(label) {
+  openGroup.value = openGroup.value === label ? null : label
+}
+watch(
+  () => route.name,
+  () => {
+    const l = activeGroupLabel()
+    if (l) openGroup.value = l
+  },
+)
+
 const opdOptions = computed(() =>
   ctx.opdList.map((o) => ({ label: o.nama_pd || o.nama_pd_singkat, value: o.id_sub_pd })),
 )
@@ -115,19 +132,30 @@ onMounted(() => {
         <small>Pemerintah Kota Tegal — SPIP</small>
       </div>
       <template v-for="g in navGroups" :key="g.label">
-        <div class="nav-group-label">{{ g.label }}</div>
-        <router-link
-          v-for="it in g.items"
-          :key="it[0]"
-          :to="{ name: it[0] }"
-          custom
-          v-slot="{ navigate, isActive }"
+        <div
+          class="nav-group-label"
+          :class="{ open: openGroup === g.label }"
+          @click="toggleGroup(g.label)"
         >
-          <div class="nav-item" :class="{ active: isActive }" @click="navigate">
-            <i class="pi" :class="it[2]" />
-            <span>{{ it[1] }}</span>
+          <span>{{ g.label }}</span>
+          <i class="pi pi-chevron-down chev" />
+        </div>
+        <div class="nav-group-items" :class="{ open: openGroup === g.label }">
+          <div class="nav-group-inner">
+            <router-link
+              v-for="it in g.items"
+              :key="it[0]"
+              :to="{ name: it[0] }"
+              custom
+              v-slot="{ navigate, isActive }"
+            >
+              <div class="nav-item" :class="{ active: isActive }" @click="navigate">
+                <i class="pi" :class="it[2]" />
+                <span>{{ it[1] }}</span>
+              </div>
+            </router-link>
           </div>
-        </router-link>
+        </div>
       </template>
       <a class="nav-item" href="/survei" target="_blank" style="margin-top: auto; border-top: 1px solid #1e293b">
         <i class="pi pi-external-link" />
@@ -215,10 +243,13 @@ onMounted(() => {
   white-space: nowrap;
 }
 .user-role {
-  color: #64748b;
-  font-size: 0.72rem;
-  background: #f1f5f9;
-  padding: 0.05rem 0.4rem;
-  border-radius: 6px;
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #eff4ff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
 }
 </style>

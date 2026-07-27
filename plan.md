@@ -87,3 +87,12 @@ field tahap dibuat select : Pelaksanaan, Pertanggungjawaban
 Form 3.c — Identifikasi Risiko Operasional OPD
 field kode risiko dibuat otomatis dengan format :
 RSO.
+
+
+Pemilik / Penanggug jawab yang sudah dientri di Form 3.b — Identifikasi Risiko Strategis OPD akan tersimpan selalu sama untuk Form selanjutnya
+
+
+Print Out / cetak Form 9, tambahkan grouping by jenis risiko
+
+
+Print Out / cetak Form 10, tambahkan grouping by jenis risiko
