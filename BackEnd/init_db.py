@@ -6,7 +6,7 @@
 
 Jalankan: python init_db.py
 """
-import psycopg2
+import psycopg
 from sqlmodel import Session, select
 
 from app.core.config import settings
@@ -59,7 +59,7 @@ def copy_opd(session: Session) -> None:
         print("  - ta_opd sudah berisi data, lewati copy")
         return
     try:
-        src = psycopg2.connect(
+        src = psycopg.connect(
             host=settings.POSTGRES_SERVER,
             port=settings.POSTGRES_PORT,
             user=settings.POSTGRES_USER,
