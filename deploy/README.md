@@ -12,9 +12,11 @@ Aplikasi dilayani di sub-path:
 |---|---|
 | `apache-manajemen-risiko.conf` | Blok VirtualHost untuk **Apache httpd** (reverse proxy) |
 | `nginx-manajemen-risiko.conf` | Blok `location` (dan contoh `server{}`) untuk Nginx |
-| `manajemen-risiko-api.service` | systemd unit untuk backend uvicorn |
+| `manajemen-risiko-api.supervisor.conf` | Program **Supervisor** untuk backend uvicorn |
+| `manajemen-risiko-api.service` | systemd unit (alternatif Supervisor) |
 
-> Pilih **salah satu** web server: Apache **atau** Nginx.
+> Pilih **salah satu** web server (Apache **atau** Nginx) dan **salah satu**
+> process manager (Supervisor **atau** systemd).
 
 ## Langkah deploy
 
@@ -28,7 +30,18 @@ cp .env.example .env   # bila ada; isi kredensial POSTGRES_*, SECRET_KEY, dll.
 # migrasi kolom tambahan (idempotent):
 psql "$DATABASE_URL" -f migrations/2026_07_27_konteks_ref_columns.sql
 ```
-Jalankan sebagai service:
+Jalankan sebagai service — **Supervisor** (utama):
+```bash
+sudo apt install supervisor   # bila belum ada
+sudo cp deploy/manajemen-risiko-api.supervisor.conf \
+        /etc/supervisor/conf.d/manajemen-risiko-api.conf
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl status manajemen-risiko-api
+# restart setelah update kode: sudo supervisorctl restart manajemen-risiko-api
+```
+
+Alternatif **systemd**:
 ```bash
 sudo cp deploy/manajemen-risiko-api.service /etc/systemd/system/
 sudo systemctl daemon-reload
