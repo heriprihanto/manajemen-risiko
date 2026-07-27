@@ -28,10 +28,13 @@ const routes = [
   { path: '/form8', name: 'form8', component: () => import('@/views/Form8.vue'), meta: { title: 'Form 8 — Informasi & Komunikasi' } },
   { path: '/form9', name: 'form9', component: () => import('@/views/Form9.vue'), meta: { title: 'Form 9 — Rencana Pemantauan PI' } },
   { path: '/form10', name: 'form10', component: () => import('@/views/Form10.vue'), meta: { title: 'Form 10 — Monitoring Risk Event & RTP' } },
+
+  { path: '/kelola-kuesioner', name: 'kelola-kuesioner', component: () => import('@/views/KelolaKuesioner.vue'), meta: { title: 'Kelola Kuesioner CEE', admin: true } },
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  // BASE_URL = '/manajemen-risiko/' saat produksi, '/' saat dev (lihat vite.config).
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
 
@@ -45,6 +48,9 @@ router.beforeEach(async (to) => {
   }
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.admin && !auth.isAdmin) {
+    return { name: 'dashboard' }
   }
   return true
 })

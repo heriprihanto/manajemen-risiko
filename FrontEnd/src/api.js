@@ -1,7 +1,10 @@
 import axios from 'axios'
 import router from '@/router'
 
-const api = axios.create({ baseURL: '/api' })
+// Base API mengikuti sub-path deploy: dev '/api', produksi '/manajemen-risiko/api'.
+// Bisa dioverride via VITE_API_BASE bila backend berada di origin/host lain.
+const apiBase = import.meta.env.VITE_API_BASE || `${import.meta.env.BASE_URL}api`
+const api = axios.create({ baseURL: apiBase })
 
 // Endpoint survei publik (router prefix /survei) memakai proteksi Google/Firebase
 // sendiri — jangan disentuh sesi JWT admin/OPD. Cocokkan awalan path saja agar

@@ -1,10 +1,17 @@
 """Endpoint master/referensi: OPD, katalog kuesioner CEE, item dokumen CEE."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import text
 from sqlmodel import Session, select
 
+from app.core.security import AdminDep
 from app.db import get_session
-from app.models import CeeDokumenItem, KuesionerKategori, KuesionerPertanyaan, Opd
+from app.models import (
+    CeeDokumenItem,
+    CeeJawaban,
+    KuesionerKategori,
+    KuesionerPertanyaan,
+    Opd,
+)
 
 router = APIRouter(prefix="/master", tags=["master"])
 
@@ -203,6 +210,114 @@ def list_kuesioner(session: Session = Depends(get_session)):
         }
         for k in kats
     ]
+
+
+# --------- Kelola pertanyaan kuesioner (khusus Admin) -------------------------
+@router.get("/kuesioner/manage")
+def list_kuesioner_manage(session: Session = Depends(get_session), user: dict = AdminDep):
+    """Semua kategori + seluruh pertanyaan (termasuk non-aktif) untuk kelola admin.
+
+    Berbeda dari GET /kuesioner yang hanya mengembalikan pertanyaan aktif
+    (dipublish) untuk survei & Form 1.a.
+    """
+    kats = session.exec(
+        select(KuesionerKategori).order_by(KuesionerKategori.urutan)
+    ).all()
+    pers = session.exec(
+        select(KuesionerPertanyaan).order_by(
+            KuesionerPertanyaan.urutan, KuesionerPertanyaan.id
+        )
+    ).all()
+    by_kat: dict[int, list] = {}
+    for p in pers:
+        by_kat.setdefault(p.kategori_id, []).append(p)
+    return [
+        {
+            "id": k.id,
+            "kode": k.kode,
+            "nama": k.nama,
+            "urutan": k.urutan,
+            "pertanyaan": by_kat.get(k.id, []),
+        }
+        for k in kats
+    ]
+
+
+@router.post("/kuesioner/pertanyaan")
+def create_pertanyaan(
+    payload: dict = Body(...),
+    session: Session = Depends(get_session),
+    user: dict = AdminDep,
+):
+    kategori_id = payload.get("kategori_id")
+    if not session.get(KuesionerKategori, kategori_id):
+        raise HTTPException(404, "Kategori tidak ditemukan")
+    teks = (payload.get("pertanyaan") or "").strip()
+    if not teks:
+        raise HTTPException(400, "Teks pertanyaan wajib diisi")
+    obj = KuesionerPertanyaan(
+        kategori_id=kategori_id,
+        nomor=(payload.get("nomor") or "").strip(),
+        pertanyaan=teks,
+        urutan=int(payload.get("urutan") or 0),
+        aktif=1 if payload.get("aktif", True) else 0,
+    )
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+@router.put("/kuesioner/pertanyaan/{pid}")
+def update_pertanyaan(
+    pid: int,
+    payload: dict = Body(...),
+    session: Session = Depends(get_session),
+    user: dict = AdminDep,
+):
+    obj = session.get(KuesionerPertanyaan, pid)
+    if not obj:
+        raise HTTPException(404, "Pertanyaan tidak ditemukan")
+    if "kategori_id" in payload and payload["kategori_id"]:
+        if not session.get(KuesionerKategori, payload["kategori_id"]):
+            raise HTTPException(404, "Kategori tidak ditemukan")
+        obj.kategori_id = payload["kategori_id"]
+    if "nomor" in payload:
+        obj.nomor = (payload.get("nomor") or "").strip()
+    if "pertanyaan" in payload:
+        teks = (payload.get("pertanyaan") or "").strip()
+        if not teks:
+            raise HTTPException(400, "Teks pertanyaan wajib diisi")
+        obj.pertanyaan = teks
+    if "urutan" in payload:
+        obj.urutan = int(payload.get("urutan") or 0)
+    if "aktif" in payload:
+        obj.aktif = 1 if payload["aktif"] else 0
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+@router.delete("/kuesioner/pertanyaan/{pid}")
+def delete_pertanyaan(
+    pid: int, session: Session = Depends(get_session), user: dict = AdminDep
+):
+    obj = session.get(KuesionerPertanyaan, pid)
+    if not obj:
+        raise HTTPException(404, "Pertanyaan tidak ditemukan")
+    dipakai = session.exec(
+        select(CeeJawaban).where(CeeJawaban.pertanyaan_id == pid)
+    ).first()
+    if dipakai:
+        raise HTTPException(
+            400,
+            "Pertanyaan sudah memiliki jawaban responden — nonaktifkan (unpublish) "
+            "saja, jangan dihapus.",
+        )
+    session.delete(obj)
+    session.commit()
+    return {"ok": True}
 
 
 @router.get("/dokumen-item")

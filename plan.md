@@ -96,3 +96,10 @@ Print Out / cetak Form 9, tambahkan grouping by jenis risiko
 
 
 Print Out / cetak Form 10, tambahkan grouping by jenis risiko
+
+Buat menu (hanya untuk admin) untuk manajemen daftar pertanyaan yang akan dipublish untuk kuisioner 
+tambahkan chaptcha pada login
+
+sidebar menu, background dengan gradasi
+
+text pada sidebar menu lebih kontras dengan background supaya lebih jelas terbaca

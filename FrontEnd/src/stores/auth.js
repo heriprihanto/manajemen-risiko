@@ -25,8 +25,13 @@ export const useAuthStore = defineStore('auth', {
     displayName: (s) => s.user?.display_name || s.user?.username || '',
   },
   actions: {
-    async login(username, password) {
-      const { data } = await api.post('/auth/login', { username, password })
+    async login(username, password, captcha = {}) {
+      const { data } = await api.post('/auth/login', {
+        username,
+        password,
+        captcha_id: captcha.id,
+        captcha_answer: captcha.answer,
+      })
       this.setSession(data.access_token, data.user)
       return data.user
     },

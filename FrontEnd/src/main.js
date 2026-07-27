@@ -18,9 +18,9 @@ import router from './router'
 const AppPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#eff4ff', 100: '#dbe6fe', 200: '#bfd3fe', 300: '#93b4fd',
-      400: '#608dfa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
-      800: '#1e40af', 900: '#1e3a8a', 950: '#172554',
+      50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+      400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+      800: '#3730a3', 900: '#312e81', 950: '#1e1b4b',
     },
   },
 })

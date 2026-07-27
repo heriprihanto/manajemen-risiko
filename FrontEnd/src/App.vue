@@ -12,6 +12,7 @@ const route = useRoute()
 const router = useRouter()
 const ctx = useContextStore()
 const auth = useAuthStore()
+const base = import.meta.env.BASE_URL // '/manajemen-risiko/' di produksi
 
 function logout() {
   auth.logout()
@@ -21,7 +22,7 @@ function logout() {
 
 const navGroups = [
   {
-    label: 'Umum',
+    label: 'Beranda',
     items: [
       ['dashboard', 'Dashboard', 'pi-home'],
       ['laporan', 'Cetak Laporan', 'pi-print'],
@@ -65,7 +66,17 @@ const navGroups = [
       ['form10', 'Form 10 Monitoring Event', 'pi-history'],
     ],
   },
+  {
+    label: 'Administrasi',
+    admin: true,
+    items: [
+      ['kelola-kuesioner', 'Kelola Kuesioner CEE', 'pi-list-check'],
+    ],
+  },
 ]
+
+// Grup ber-flag admin hanya tampil bagi Admin.
+const visibleGroups = computed(() => navGroups.filter((g) => !g.admin || auth.isAdmin))
 
 // Sidebar accordion: hanya satu grup terbuka; grup berisi menu aktif dibuka.
 function activeGroupLabel() {
@@ -131,7 +142,7 @@ onMounted(() => {
         Manajemen Risiko
         <small>Pemerintah Kota Tegal — SPIP</small>
       </div>
-      <template v-for="g in navGroups" :key="g.label">
+      <template v-for="g in visibleGroups" :key="g.label">
         <div
           class="nav-group-label"
           :class="{ open: openGroup === g.label }"
@@ -157,7 +168,7 @@ onMounted(() => {
           </div>
         </div>
       </template>
-      <a class="nav-item" href="/survei" target="_blank" style="margin-top: auto; border-top: 1px solid #1e293b">
+      <a class="nav-item" :href="`${base}survei`" target="_blank" style="margin-top: auto; border-top: 1px solid #1e293b">
         <i class="pi pi-external-link" />
         <span>Buka Survei Publik</span>
       </a>

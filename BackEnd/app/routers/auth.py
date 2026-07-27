@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlmodel import Session
 
+from app.core import captcha
 from app.core.security import UserDep, create_access_token
 from app.db import get_session
 
@@ -24,6 +25,8 @@ LOGIN_SQL = text(
 class LoginRequest(BaseModel):
     username: str
     password: str
+    captcha_id: str | None = None
+    captcha_answer: str | None = None
 
 
 def _user_payload(row) -> dict:
@@ -37,8 +40,17 @@ def _user_payload(row) -> dict:
     }
 
 
+@router.get("/captcha")
+def get_captcha():
+    """Terbitkan captcha baru (id + gambar SVG). Publik."""
+    return captcha.generate()
+
+
 @router.post("/login")
 def login(body: LoginRequest, session: Session = Depends(get_session)):
+    # Verifikasi captcha lebih dulu (sekali pakai) sebelum cek kredensial.
+    if not captcha.verify(body.captcha_id, body.captcha_answer):
+        raise HTTPException(400, "Kode captcha salah atau kedaluwarsa")
     row = session.execute(
         LOGIN_SQL, {"username": body.username, "password": body.password}
     ).first()
