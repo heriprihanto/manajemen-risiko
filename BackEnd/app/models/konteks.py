@@ -54,8 +54,15 @@ class KonteksOperasionalOpd(SQLModel, table=True):
     sumber_data: str | None = None
     tujuan_strategis: str | None = None
     program: str | None = None
+    indikator_program: str | None = None  # indikator lvl-5 (id_parent=idprogram)
     keluaran_hasil_kegiatan: str | None = None
     keluaran_sub_kegiatan: str | None = None
     urusan_pemerintahan: str | None = None
     periode_dinilai: str | None = None
+    # Referensi centang renja Form 2.c (salah satu terisi):
+    #   ref_subkegiatan = renja_subkegiatan.idsubkegiatan (baris subkegiatan)
+    #   ref_indikator   = renja_indikator.id (baris indikator program lvl-5)
+    # Keduanya null = entri manual lama.
+    ref_subkegiatan: str | None = Field(default=None, index=True)
+    ref_indikator: str | None = Field(default=None, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

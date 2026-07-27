@@ -21,6 +21,11 @@ class Risiko(SQLModel, table=True):
     no_urut: str | None = None
 
     # Konteks (strategis: tujuan/sasaran; operasional: kegiatan/tahap)
+    # Form 3.b: referensi baris sumber konteks. konteks_sumber menandai tabel asal:
+    #   'b' = tr_konteks_strategis_opd (Form 2.b)
+    #   'c' = tr_konteks_operasional_opd (Form 2.c, indikator program)
+    konteks_id: int | None = Field(default=None, index=True)
+    konteks_sumber: str | None = None
     tujuan_sasaran: str | None = None
     indikator_kinerja: str | None = None
     kegiatan: str | None = None          # Form 3.c kolom b

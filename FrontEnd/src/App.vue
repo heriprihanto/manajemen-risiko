@@ -48,7 +48,9 @@ const navGroups = [
   {
     label: 'Penilaian Risiko',
     items: [
-      ['form3', 'Form 3 Identifikasi', 'pi-flag'],
+      ['form3a', 'Form 3.a Identifikasi Pemda', 'pi-flag'],
+      ['form3b', 'Form 3.b Identifikasi OPD', 'pi-flag'],
+      ['form3c', 'Form 3.c Identifikasi Operasional', 'pi-flag'],
       ['form4', 'Form 4 Analisis', 'pi-chart-bar'],
       ['matriks', 'Matriks Risiko', 'pi-th-large'],
       ['form5', 'Form 5 Prioritas', 'pi-star'],
@@ -81,7 +83,7 @@ const isPublic = computed(() => !!route.meta.public)
 const laporanKey = {
   form1a: 'f1a', form1b: 'f1b', form1c: 'f1c', form6: 'f6',
   form2a: 'f2a', form2b: 'f2b', form2c: 'f2c',
-  form3: 'f3', form4: 'f4', form5: 'f5', form7: 'f7',
+  form3a: 'f3', form3b: 'f3', form3c: 'f3', form4: 'f4', form5: 'f5', form7: 'f7',
   form8: 'f8', form9: 'f9', form10: 'f10',
 }
 // Tampilkan tombol Cetak di setiap modul kecuali halaman laporan itu sendiri.

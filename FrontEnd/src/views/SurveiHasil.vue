@@ -4,10 +4,18 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import SelectButton from 'primevue/selectbutton'
 import Tag from 'primevue/tag'
+import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
+import { useAuthStore } from '@/stores/auth'
 
 const ctx = useContextStore()
+const auth = useAuthStore()
+const toast = useToast()
+const confirm = useConfirm()
+const isAdmin = computed(() => auth.isAdmin)
 const loading = ref(true)
 const data = ref(null)
 const expanded = ref([])
@@ -50,6 +58,20 @@ function nilaiColor(v) {
   if (v == null) return 'secondary'
   if (v >= 3) return 'success'
   return 'danger'
+}
+
+function remove(r) {
+  confirm.require({
+    message: `Hapus hasil survei responden "${r.kode_responden}${r.nama_responden ? ' — ' + r.nama_responden : ''}"? Tindakan ini tidak dapat dibatalkan.`,
+    header: 'Konfirmasi Hapus',
+    icon: 'pi pi-exclamation-triangle',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      await api.delete(`/cee/survei-hasil/${r.id}`)
+      await load()
+      toast.add({ severity: 'success', summary: 'Hasil survei dihapus', life: 1800 })
+    },
+  })
 }
 
 async function load() {
@@ -117,6 +139,18 @@ onMounted(load)
         </Column>
         <Column header="Waktu Pengisian" :style="{ minWidth: '160px' }">
           <template #body="{ data: r }"><span class="muted">{{ fmtDate(r.submitted_at) }}</span></template>
+        </Column>
+        <Column v-if="isAdmin" header="" :style="{ width: '56px' }" class="no-print">
+          <template #body="{ data: r }">
+            <Button
+              icon="pi pi-trash"
+              text
+              rounded
+              size="small"
+              severity="danger"
+              @click="remove(r)"
+            />
+          </template>
         </Column>
 
         <template #expansion="{ data: r }">

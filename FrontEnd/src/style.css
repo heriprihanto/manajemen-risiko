@@ -100,6 +100,14 @@ table.rpt td.c { text-align: center; }
 table.rpt ol.kelemahan-ol { margin: 0; padding-left: 1.1em; }
 table.rpt ol.kelemahan-ol li { margin: 0 0 2px; }
 table.rpt .pre-line { white-space: pre-line; }
+/* Form 2.b cetak: kolom label kiri tebal; hijau = data renstra, kuning = entri form */
+table.rpt.f2b td:first-child { font-weight: 600; background: #f8fafc; }
+table.rpt .hijau { background: #e8f5e9; }
+table.rpt .kuning { background: #fff9c4; }
+table.rpt .hijau, table.rpt .kuning {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 .report-sign { margin-top: 26px; display: flex; justify-content: flex-end; }
 .report-sign .box { text-align: center; font-size: .82rem; min-width: 280px; }
 

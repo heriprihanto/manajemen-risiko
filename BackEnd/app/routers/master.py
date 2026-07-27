@@ -30,6 +30,155 @@ def get_opd(opd_id: int, session: Session = Depends(get_session)):
     return session.get(Opd, opd_id)
 
 
+@router.get("/opd/{opd_id}/print-context")
+def opd_print_context(opd_id: int, session: Session = Depends(get_session)):
+    """Data kop & tanda tangan cetak Form 2.b.
+
+    `bidang_urusan` (text[]) hanya terisi di baris PD induk (id_sub_pd = id_pd),
+    jadi diresolusi lewat join ke baris induk lalu digabung jadi satu string.
+    """
+    row = session.exec(
+        text(
+            "SELECT o.nama_pd, o.nama_kepala, o.nip_kepala, o.jabatan_kepala, "
+            "       COALESCE(p.bidang_urusan, o.bidang_urusan) AS bidang_urusan "
+            "FROM ta_opd o "
+            "LEFT JOIN ta_opd p ON p.id_sub_pd = o.id_pd "
+            "WHERE o.id_sub_pd = :opd_id"
+        ).bindparams(opd_id=opd_id)
+    ).first()
+    if not row:
+        return {}
+    bu = row.bidang_urusan
+    bidang = ", ".join(bu) if isinstance(bu, (list, tuple)) else (bu or "")
+    return {
+        "nama_pd": row.nama_pd,
+        "nama_kepala": row.nama_kepala,
+        "nip_kepala": row.nip_kepala,
+        "jabatan_kepala": row.jabatan_kepala,
+        "bidang_urusan": bidang,
+    }
+
+
+@router.get("/renja/subkegiatan")
+def list_renja_subkegiatan(
+    opd_id: int, tahun: int, session: Session = Depends(get_session)
+):
+    """Data checklist Form 2.c: subkegiatan (+indikator lvl-7 keluaran) dan
+    indikator program (lvl-5) yang bisa dicentang sendiri. `id_sub_pd` renja =
+    opd_id aplikasi (tanpa peta). Mengembalikan {subkegiatan, indikator_program}."""
+    subs = session.exec(
+        text(
+            "SELECT idsubkegiatan, idprogram, idkegiatan, kode_sub_kegiatan, "
+            "       nm_program, nm_kegiatan, nm_sub_kegiatan "
+            "FROM renja_subkegiatan "
+            "WHERE id_sub_pd = :opd_id AND tahun = :tahun "
+            "ORDER BY kode_sub_kegiatan"
+        ).bindparams(opd_id=opd_id, tahun=tahun)
+    ).all()
+    # nama & induk per id (untuk melabeli indikator program/kegiatan).
+    prog_nama = {str(s.idprogram): s.nm_program for s in subs}
+    keg_nama = {str(s.idkegiatan): s.nm_kegiatan for s in subs}
+    keg_prog = {str(s.idkegiatan): str(s.idprogram) for s in subs}
+
+    def _tgt(target, satuan):
+        return " ".join(x for x in (target, satuan) if x)
+
+    def _label(tolok, satuan, target):
+        extra = _tgt(target, satuan)
+        return f"{tolok} ({extra})" if extra else tolok
+
+    # Indikator level-7 = keluaran subkegiatan (id_parent = idsubkegiatan).
+    ind_sub = session.exec(
+        text(
+            "SELECT ri.id_parent, ri.tolok_ukur, ri.satuan, ri.target "
+            "FROM renja_indikator ri "
+            "JOIN renja_subkegiatan sk ON sk.idsubkegiatan = ri.id_parent "
+            "WHERE sk.id_sub_pd = :opd_id AND sk.tahun = :tahun AND ri.lvl = 7 "
+            "ORDER BY ri.nomor"
+        ).bindparams(opd_id=opd_id, tahun=tahun)
+    ).all()
+    by_sub: dict[str, list[str]] = {}
+    by_sub_list: dict[str, list[dict]] = {}  # terstruktur untuk cetak
+    for r in ind_sub:
+        if r.tolok_ukur:
+            by_sub.setdefault(str(r.id_parent), []).append(
+                _label(r.tolok_ukur, r.satuan, r.target)
+            )
+            by_sub_list.setdefault(str(r.id_parent), []).append(
+                {"tolok": r.tolok_ukur, "target": _tgt(r.target, r.satuan)}
+            )
+
+    # Indikator level-5 = indikator program (id_parent = idprogram) & level-6 =
+    # indikator kegiatan (id_parent = idkegiatan); tiap baris punya id sendiri
+    # agar bisa dicentang terpisah.
+    ind_prog = session.exec(
+        text(
+            "SELECT ri.id, ri.id_parent, ri.tolok_ukur, ri.satuan, ri.target "
+            "FROM renja_indikator ri "
+            "WHERE ri.lvl = 5 AND ri.id_parent IN ("
+            "  SELECT DISTINCT idprogram FROM renja_subkegiatan "
+            "  WHERE id_sub_pd = :opd_id AND tahun = :tahun) "
+            "ORDER BY ri.nomor"
+        ).bindparams(opd_id=opd_id, tahun=tahun)
+    ).all()
+    ind_keg = session.exec(
+        text(
+            "SELECT ri.id, ri.id_parent, ri.tolok_ukur, ri.satuan, ri.target "
+            "FROM renja_indikator ri "
+            "WHERE ri.lvl = 6 AND ri.id_parent IN ("
+            "  SELECT DISTINCT idkegiatan FROM renja_subkegiatan "
+            "  WHERE id_sub_pd = :opd_id AND tahun = :tahun) "
+            "ORDER BY ri.nomor"
+        ).bindparams(opd_id=opd_id, tahun=tahun)
+    ).all()
+
+    subkegiatan = [
+        {
+            "idsubkegiatan": str(s.idsubkegiatan),
+            "idprogram": str(s.idprogram),
+            "idkegiatan": str(s.idkegiatan),
+            "kode_sub_kegiatan": s.kode_sub_kegiatan,
+            "nm_program": s.nm_program,
+            "nm_kegiatan": s.nm_kegiatan,
+            "nm_sub_kegiatan": s.nm_sub_kegiatan,
+            "indikator": "; ".join(by_sub.get(str(s.idsubkegiatan), [])),
+            "indikator_list": by_sub_list.get(str(s.idsubkegiatan), []),
+        }
+        for s in subs
+    ]
+    indikator_program = [
+        {
+            "id": str(r.id),
+            "idprogram": str(r.id_parent),
+            "nm_program": prog_nama.get(str(r.id_parent)),
+            "label": _label(r.tolok_ukur, r.satuan, r.target),
+            "tolok": r.tolok_ukur,
+            "target": _tgt(r.target, r.satuan),
+        }
+        for r in ind_prog
+        if r.tolok_ukur
+    ]
+    indikator_kegiatan = [
+        {
+            "id": str(r.id),
+            "idkegiatan": str(r.id_parent),
+            "idprogram": keg_prog.get(str(r.id_parent)),
+            "nm_program": prog_nama.get(keg_prog.get(str(r.id_parent))),
+            "nm_kegiatan": keg_nama.get(str(r.id_parent)),
+            "label": _label(r.tolok_ukur, r.satuan, r.target),
+            "tolok": r.tolok_ukur,
+            "target": _tgt(r.target, r.satuan),
+        }
+        for r in ind_keg
+        if r.tolok_ukur
+    ]
+    return {
+        "subkegiatan": subkegiatan,
+        "indikator_program": indikator_program,
+        "indikator_kegiatan": indikator_kegiatan,
+    }
+
+
 @router.get("/kuesioner")
 def list_kuesioner(session: Session = Depends(get_session)):
     """Kategori (sub-unsur) beserta daftar pertanyaannya."""

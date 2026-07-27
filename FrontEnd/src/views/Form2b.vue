@@ -1,4 +1,6 @@
 <script setup>
+import { RouterLink } from 'vue-router'
+import Button from 'primevue/button'
 import CrudTable from '@/components/CrudTable.vue'
 const columns = [
   {
@@ -35,7 +37,6 @@ const columns = [
     editable: true,
     width: '180px',
   },
-  { field: 'urusan_pemerintahan', label: 'Urusan Pemerintahan', type: 'textarea', width: '160px' },
   {
     field: 'periode_dinilai',
     label: 'Periode Dinilai',
@@ -49,5 +50,10 @@ const columns = [
 ]
 </script>
 <template>
+  <div class="toolbar no-print" style="justify-content: flex-end">
+    <RouterLink :to="{ name: 'laporan', query: { form: 'f2b', print: 1 } }" custom v-slot="{ navigate }">
+      <Button label="Cetak Form 2.b" icon="pi pi-print" size="small" outlined @click="navigate" />
+    </RouterLink>
+  </div>
   <CrudTable endpoint="/konteks/strategis-opd" :columns="columns" title="Form 2.b — Konteks Strategis OPD" :numbered="false" />
 </template>

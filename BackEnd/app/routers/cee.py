@@ -2,10 +2,10 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlmodel import Session, select
 
-from app.core.security import UserDep, guard_record
+from app.core.security import AdminDep, UserDep, guard_record
 from app.db import get_session
 from app.models import (
     CeeDokumenItem,
@@ -267,6 +267,21 @@ def survei_hasil(opd_id: int, tahun: int, session: Session = Depends(get_session
         "kategori": kategori_out,
         "responden": resp_out,
     }
+
+
+@router.delete("/survei-hasil/{rid}")
+def delete_survei_hasil(
+    rid: int, session: Session = Depends(get_session), user: dict = AdminDep
+):
+    """Hapus satu hasil survei (responden + jawaban). Khusus Admin."""
+    obj = session.get(CeeResponden, rid)
+    if obj is None:
+        raise HTTPException(404, "Responden tidak ditemukan")
+    for j in session.exec(select(CeeJawaban).where(CeeJawaban.responden_id == rid)).all():
+        session.delete(j)
+    session.delete(obj)
+    session.commit()
+    return {"ok": True}
 
 
 # --------------------------- Form 1.b: Reviu dokumen --------------------------

@@ -17,7 +17,9 @@ const routes = [
   { path: '/form2b', name: 'form2b', component: () => import('@/views/Form2b.vue'), meta: { title: 'Form 2.b — Konteks Strategis OPD' } },
   { path: '/form2c', name: 'form2c', component: () => import('@/views/Form2c.vue'), meta: { title: 'Form 2.c — Konteks Operasional OPD' } },
 
-  { path: '/form3', name: 'form3', component: () => import('@/views/Form3.vue'), meta: { title: 'Form 3 — Identifikasi Risiko' } },
+  { path: '/form3a', name: 'form3a', component: () => import('@/views/Form3.vue'), props: { jenis: 'strategis_pemda' }, meta: { title: 'Form 3.a — Identifikasi Risiko Strategis Pemda' } },
+  { path: '/form3b', name: 'form3b', component: () => import('@/views/Form3.vue'), props: { jenis: 'strategis_opd' }, meta: { title: 'Form 3.b — Identifikasi Risiko Strategis OPD' } },
+  { path: '/form3c', name: 'form3c', component: () => import('@/views/Form3.vue'), props: { jenis: 'operasional_opd' }, meta: { title: 'Form 3.c — Identifikasi Risiko Operasional OPD' } },
   { path: '/form4', name: 'form4', component: () => import('@/views/Form4.vue'), meta: { title: 'Form 4 — Analisis Risiko' } },
   { path: '/matriks', name: 'matriks', component: () => import('@/views/Matriks.vue'), meta: { title: 'Matriks Risiko' } },
   { path: '/form5', name: 'form5', component: () => import('@/views/Form5.vue'), meta: { title: 'Form 5 — Daftar Risiko Prioritas' } },

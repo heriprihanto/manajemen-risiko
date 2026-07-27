@@ -1,0 +1,14 @@
+# Environment variables
+.env
+
+# Python virtual environment
+.venv/
+
+# Node dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Claude
+.claude/
