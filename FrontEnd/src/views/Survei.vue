@@ -7,6 +7,7 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api'
 import { auth, signInWithGoogle, signOut } from '@/firebase'
+import AppLoader from '@/components/AppLoader.vue'
 
 const toast = useToast()
 
@@ -281,7 +282,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-else class="muted" style="text-align: center; padding: 40px">Memuat…</div>
+      <AppLoader v-else label="Memuat kuesioner…" />
     </main>
   </div>
 </template>

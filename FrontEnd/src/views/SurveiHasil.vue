@@ -10,6 +10,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
 import { useAuthStore } from '@/stores/auth'
+import AppLoader from '@/components/AppLoader.vue'
 
 const ctx = useContextStore()
 const auth = useAuthStore()
@@ -94,7 +95,7 @@ onMounted(load)
     <SelectButton v-model="sumber" :options="sumberOptions" optionLabel="label" optionValue="value" />
   </div>
 
-  <div v-if="loading" class="muted">Memuat rincian hasil survei…</div>
+  <AppLoader v-if="loading" label="Memuat rincian hasil survei…" />
 
   <template v-else>
     <div class="stat-grid" style="margin-bottom: 16px">

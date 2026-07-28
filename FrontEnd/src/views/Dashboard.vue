@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
+import AppLoader from '@/components/AppLoader.vue'
 
 const ctx = useContextStore()
 const data = ref(null)
@@ -86,5 +87,5 @@ onMounted(load)
       </div>
     </div>
   </div>
-  <div v-else-if="loading" class="muted">Memuat…</div>
+  <AppLoader v-else-if="loading" label="Memuat ringkasan…" />
 </template>

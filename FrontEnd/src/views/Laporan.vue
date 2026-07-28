@@ -5,6 +5,7 @@ import MultiSelect from 'primevue/multiselect'
 import Button from 'primevue/button'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
+import AppLoader from '@/components/AppLoader.vue'
 import Form1a from '@/components/laporan/Form1a.vue'
 import Form1b from '@/components/laporan/Form1b.vue'
 import Form1c from '@/components/laporan/Form1c.vue'
@@ -135,7 +136,7 @@ onMounted(async () => {
     <Button label="Cetak / Print Preview" icon="pi pi-print" @click="cetak" :disabled="loading" />
   </div>
 
-  <div v-if="loading" class="muted">Memuat data laporan…</div>
+  <AppLoader v-if="loading" label="Memuat data laporan…" />
 
   <div v-else class="report-sheet">
     <Form1a v-if="isSel('f1a') && d.f1a" :data="d.f1a" :opd-name="opdName" :tahun="ctx.tahun" />

@@ -246,6 +246,14 @@ a { color: inherit; text-decoration: none; }
 .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .spacer { flex: 1; }
 
+/* ===================== Loader ===================== */
+/* DataTable memakai spinner bawaan PrimeVue (2 detik per putaran); disamakan
+   temponya dengan AppLoader agar terasa satu gaya. Selektor disarangkan karena
+   style PrimeVue disuntikkan ke <head> setelah file ini. */
+.p-datatable-mask .p-icon-spin {
+  animation-duration: 0.75s;
+}
+
 /* ===================== Select / MultiSelect ===================== */
 /* Opsi RPJMD/renstra (visi, sasaran, prioritas, program) dan nama OPD bisa
    sangat panjang. Bawaan PrimeVue memakai white-space: nowrap pada opsi dan

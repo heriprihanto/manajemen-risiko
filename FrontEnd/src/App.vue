@@ -5,6 +5,7 @@ import Select from 'primevue/select'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
+import AppLoader from '@/components/AppLoader.vue'
 import { useContextStore } from '@/stores/context'
 import { useAuthStore } from '@/stores/auth'
 
@@ -13,6 +14,19 @@ const router = useRouter()
 const ctx = useContextStore()
 const auth = useAuthStore()
 const base = import.meta.env.BASE_URL // '/manajemen-risiko/' di produksi
+
+// Bar progres tipis saat pindah halaman. Komponen rute dimuat lazy (dynamic
+// import), jadi tanpa ini perpindahan menu terasa menggantung tanpa umpan balik.
+const navigating = ref(false)
+router.beforeEach(() => {
+  navigating.value = true
+})
+router.afterEach(() => {
+  navigating.value = false
+})
+router.onError(() => {
+  navigating.value = false
+})
 
 function logout() {
   auth.logout()
@@ -157,6 +171,9 @@ watch(
 </script>
 
 <template>
+  <!-- Progres perpindahan halaman, di atas segalanya -->
+  <div v-if="navigating" class="route-progress no-print" />
+
   <!-- Halaman publik (survei) tampil tanpa shell admin -->
   <template v-if="isPublic">
     <router-view />
@@ -256,7 +273,7 @@ watch(
           {{ opdError }}
           <Button label="Coba lagi" icon="pi pi-refresh" size="small" text @click="ensureOpd" />
         </div>
-        <div v-else class="muted">Memuat data OPD…</div>
+        <AppLoader v-else label="Memuat data OPD…" />
       </main>
     </div>
     <Toast position="top-right" />
@@ -265,6 +282,34 @@ watch(
 </template>
 
 <style scoped>
+/* Bar progres perpindahan halaman: melintas dari kiri ke kanan di tepi atas. */
+.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 3000;
+  overflow: hidden;
+  background: rgba(99, 102, 241, 0.14);
+}
+.route-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--grad-brand);
+  transform-origin: 0 50%;
+  animation: route-progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes route-progress-slide {
+  0% { transform: translateX(-100%) scaleX(0.4); }
+  50% { transform: translateX(0) scaleX(0.7); }
+  100% { transform: translateX(100%) scaleX(0.4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-progress::before { animation-duration: 2.4s; }
+}
+
 .user-box {
   display: flex;
   align-items: center;

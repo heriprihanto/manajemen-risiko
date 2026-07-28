@@ -7,6 +7,7 @@ import InputText from 'primevue/inputtext'
 import { useConfirm } from 'primevue/useconfirm'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
+import AppLoader from '@/components/AppLoader.vue'
 
 const ctx = useContextStore()
 const toast = useToast()
@@ -155,7 +156,7 @@ onMounted(load)
       </template>
     </Dialog>
   </div>
-  <div v-else-if="loading" class="muted">Memuat…</div>
+  <AppLoader v-else-if="loading" label="Memuat kuesioner…" />
 </template>
 
 <style scoped>

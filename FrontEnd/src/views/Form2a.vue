@@ -6,6 +6,7 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
+import AppLoader from '@/components/AppLoader.vue'
 
 const ctx = useContextStore()
 const toast = useToast()
@@ -108,7 +109,7 @@ onMounted(load)
       Tahun {{ ctx.tahun }}. Pilihan diambil dari data RPJMD.
     </p>
 
-    <div v-if="loading" class="muted">Memuat pilihan RPJMD…</div>
+    <AppLoader v-if="loading" label="Memuat pilihan RPJMD…" />
 
     <template v-else>
       <!-- minmax(0,1fr): kolom tidak boleh ikut melebar mengikuti isi pilihan -->

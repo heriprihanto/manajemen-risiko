@@ -6,6 +6,7 @@ import Checkbox from 'primevue/checkbox'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api'
 import { useContextStore } from '@/stores/context'
+import AppLoader from '@/components/AppLoader.vue'
 
 const ctx = useContextStore()
 const toast = useToast()
@@ -118,7 +119,7 @@ onMounted(load)
       <b>{{ ctx.opd?.nama_pd }}</b> — {{ ctx.tahun }}
     </p>
 
-    <div v-if="loading" class="muted">Memuat data renja…</div>
+    <AppLoader v-if="loading" label="Memuat data renja…" />
     <div v-else-if="!subs.length && !progInd.length && !kegInd.length" class="muted">
       Belum ada data renja untuk OPD &amp; tahun ini.
     </div>
