@@ -18,11 +18,14 @@ const base = import.meta.env.BASE_URL // '/manajemen-risiko/' di produksi
 // Bar progres tipis saat pindah halaman. Komponen rute dimuat lazy (dynamic
 // import), jadi tanpa ini perpindahan menu terasa menggantung tanpa umpan balik.
 const navigating = ref(false)
+// Di layar sempit sidebar jadi drawer; ditutup otomatis tiap pindah halaman.
+const sidebarOpen = ref(false)
 router.beforeEach(() => {
   navigating.value = true
 })
 router.afterEach(() => {
   navigating.value = false
+  sidebarOpen.value = false
 })
 router.onError(() => {
   navigating.value = false
@@ -180,7 +183,10 @@ watch(
     <Toast position="top-right" />
   </template>
 
-  <div v-else class="app-shell">
+  <div v-else class="app-shell" :class="{ 'sidebar-open': sidebarOpen }">
+    <!-- Latar gelap penutup saat drawer terbuka (hanya tampil di layar sempit) -->
+    <div class="sidebar-backdrop no-print" @click="sidebarOpen = false" />
+
     <aside class="sidebar">
       <div class="brand">
         Manajemen Risiko
@@ -220,10 +226,20 @@ watch(
 
     <div class="main">
       <header class="topbar">
+        <Button
+          class="nav-toggle no-print"
+          :icon="sidebarOpen ? 'pi pi-times' : 'pi pi-bars'"
+          severity="secondary"
+          text
+          rounded
+          aria-label="Menu"
+          @click="sidebarOpen = !sidebarOpen"
+        />
         <div class="page-title">{{ pageTitle }}</div>
         <div class="ctx">
-          <i class="pi pi-building muted" />
+          <i class="pi pi-building muted ctx-icon" />
           <Select
+            class="opd-select"
             :modelValue="ctx.opdId"
             @update:modelValue="ctx.setOpd"
             :options="opdOptions"
@@ -232,15 +248,14 @@ watch(
             filter
             placeholder="Pilih OPD"
             :disabled="opdLocked"
-            style="width: 320px"
           />
           <Select
+            class="tahun-select"
             :modelValue="ctx.tahun"
             @update:modelValue="ctx.setTahun"
             :options="tahunOptions"
             optionLabel="label"
             optionValue="value"
-            style="width: 110px"
           />
           <div class="user-box">
             <i class="pi pi-user" />
@@ -249,6 +264,7 @@ watch(
           </div>
           <Button
             v-if="showCetak"
+            class="btn-cetak"
             label="Cetak"
             icon="pi pi-print"
             size="small"

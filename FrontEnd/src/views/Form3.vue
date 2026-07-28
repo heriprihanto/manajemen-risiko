@@ -238,7 +238,7 @@ onMounted(load)
   </div>
 
   <Dialog v-model:visible="dialog" :header="jenisLabel[jenis]" modal style="width: 720px">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 6px">
+    <div class="grid-2" style="gap: 12px; padding-top: 6px">
       <template v-if="isOperasional">
         <div style="grid-column: 1 / -1">
           <label class="muted lbl">Indikator Subkegiatan (dari Form 2.c)</label>

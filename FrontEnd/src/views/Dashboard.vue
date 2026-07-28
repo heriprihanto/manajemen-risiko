@@ -55,7 +55,7 @@ onMounted(load)
       </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px">
+    <div class="grid-2" style="margin-top: 18px">
       <div class="page-card">
         <h3 style="margin-top: 0">Risiko per Level</h3>
         <div v-for="(n, lvl) in data.risiko_per_level" :key="lvl" style="margin-bottom: 10px">
