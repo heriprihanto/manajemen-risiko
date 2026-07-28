@@ -77,6 +77,27 @@ async function load() {
 function cetak() {
   window.print()
 }
+
+// Ekspor Excel: satu sheet per form yang sedang dipilih. Diunduh lewat api
+// (bukan link biasa) agar header Authorization ikut terkirim.
+const exporting = ref(false)
+async function exportExcel() {
+  exporting.value = true
+  try {
+    const { data } = await api.get('/laporan/excel', {
+      params: { opd_id: ctx.opdId, tahun: ctx.tahun, forms: selected.value.join(',') },
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Laporan Manajemen Risiko ${opdName.value} ${ctx.tahun}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } finally {
+    exporting.value = false
+  }
+}
 onMounted(async () => {
   await load()
   // Auto-cetak saat dibuka via tombol Cetak modul (?print=1).
@@ -101,6 +122,16 @@ onMounted(async () => {
       <template #option="{ option }">{{ option.form }} — {{ option.label }}</template>
     </MultiSelect>
     <div class="spacer" />
+    <Button
+      label="Export Excel"
+      icon="pi pi-file-excel"
+      severity="secondary"
+      outlined
+      :loading="exporting"
+      :disabled="loading || !selected.length"
+      v-tooltip.bottom="'Unduh form terpilih sebagai file Excel'"
+      @click="exportExcel"
+    />
     <Button label="Cetak / Print Preview" icon="pi pi-print" @click="cetak" :disabled="loading" />
   </div>
 

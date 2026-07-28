@@ -9,6 +9,7 @@ from app.routers import (
     cee,
     dashboard,
     konteks,
+    laporan,
     master,
     monitoring,
     risiko,
@@ -38,6 +39,7 @@ app.include_router(konteks.router, prefix=API, dependencies=scoped)
 app.include_router(risiko.router, prefix=API, dependencies=scoped)
 app.include_router(monitoring.router, prefix=API, dependencies=scoped)
 app.include_router(dashboard.router, prefix=API, dependencies=scoped)
+app.include_router(laporan.router, prefix=API, dependencies=scoped)
 
 
 @app.on_event("startup")
