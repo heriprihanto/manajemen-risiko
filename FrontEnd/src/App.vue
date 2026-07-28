@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
@@ -111,7 +111,7 @@ const isPublic = computed(() => !!route.meta.public)
 const laporanKey = {
   form1a: 'f1a', form1b: 'f1b', form1c: 'f1c', form6: 'f6',
   form2a: 'f2a', form2b: 'f2b', form2c: 'f2c',
-  form3a: 'f3', form3b: 'f3', form3c: 'f3', form4: 'f4', form5: 'f5', form7: 'f7',
+  form3a: 'f3a', form3b: 'f3b', form3c: 'f3c', form4: 'f4', form5: 'f5', form7: 'f7',
   form8: 'f8', form9: 'f9', form10: 'f10',
 }
 // Tampilkan tombol Cetak di setiap modul kecuali halaman laporan itu sendiri.
@@ -124,9 +124,36 @@ function cetak() {
 // OPD hanya bisa dipilih bebas oleh Admin / pengguna dengan >1 OPD.
 const opdLocked = computed(() => !auth.isAdmin && ctx.opdList.length <= 1)
 
-onMounted(() => {
-  if (!isPublic.value) ctx.loadOpd(auth.allowedOpds)
-})
+// Daftar OPD dimuat saat masuk area terproteksi — tidak cukup lewat onMounted:
+// App hanya mount sekali, sehingga bila aplikasi dibuka di /login daftar OPD
+// tidak pernah dimuat dan halaman setelah login menunggu selamanya (harus
+// reload manual). Watcher ini juga menangani pergantian pengguna.
+const opdError = ref('')
+let opdLoading = false
+
+async function ensureOpd() {
+  if (isPublic.value || !auth.isAuthenticated || ctx.loaded || opdLoading) return
+  opdLoading = true
+  opdError.value = ''
+  try {
+    await ctx.loadOpd(auth.allowedOpds)
+  } catch (e) {
+    // 401 sudah ditangani interceptor api.js (redirect ke login).
+    if (e.response?.status !== 401) opdError.value = 'Gagal memuat daftar OPD.'
+  } finally {
+    opdLoading = false
+  }
+}
+
+watch(
+  [isPublic, () => auth.user?.username],
+  ([, username], prev) => {
+    // Pengguna berganti tanpa reload -> konteks OPD lama tidak berlaku lagi.
+    if (prev?.[1] && prev[1] !== username) ctx.$reset()
+    ensureOpd()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -225,6 +252,10 @@ onMounted(() => {
       </header>
       <main class="content">
         <router-view v-if="ctx.loaded" :key="route.name + '-' + ctx.opdId + '-' + ctx.tahun" />
+        <div v-else-if="opdError" class="muted">
+          {{ opdError }}
+          <Button label="Coba lagi" icon="pi pi-refresh" size="small" text @click="ensureOpd" />
+        </div>
         <div v-else class="muted">Memuat data OPD…</div>
       </main>
     </div>

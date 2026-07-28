@@ -246,6 +246,52 @@ a { color: inherit; text-decoration: none; }
 .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .spacer { flex: 1; }
 
+/* ===================== Select / MultiSelect ===================== */
+/* Opsi RPJMD/renstra (visi, sasaran, prioritas, program) dan nama OPD bisa
+   sangat panjang. Bawaan PrimeVue memakai white-space: nowrap pada opsi dan
+   panel overlay hanya diberi min-width sebesar kotaknya, sehingga panel ikut
+   melebar mengikuti opsi terpanjang dan bisa melampaui lebar jendela.
+   Batasi lebar panel, lalu bungkus teks opsi ke baris berikutnya.
+   Selektor sengaja disarangkan: style bawaan PrimeVue disuntikkan ke <head>
+   saat runtime (setelah file ini), jadi override butuh specificity lebih. */
+.p-select-overlay,
+.p-multiselect-overlay {
+  max-width: min(680px, calc(100vw - 24px));
+}
+.p-select-overlay .p-select-option,
+.p-multiselect-overlay .p-multiselect-option {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.p-select-overlay .p-select-option-label,
+.p-multiselect-overlay .p-multiselect-option > span {
+  min-width: 0;
+}
+
+/* Kotak input tidak boleh mendorong lebar halaman; chip pilihan dibungkus ke
+   beberapa baris (dibatasi tinggi & bisa digulir) alih-alih memanjang ke
+   samping. */
+.p-select,
+.p-multiselect {
+  max-width: 100%;
+}
+.p-multiselect .p-multiselect-label {
+  white-space: normal;
+  flex-wrap: wrap;
+}
+.p-multiselect .p-multiselect-label-container {
+  max-height: 9rem;
+  overflow-y: auto;
+}
+.p-multiselect .p-multiselect-chip-item,
+.p-multiselect .p-multiselect-chip-item .p-chip {
+  max-width: 100%;
+}
+.p-multiselect .p-multiselect-chip-item .p-chip-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .stat {
   --accent-grad: var(--grad-blue);

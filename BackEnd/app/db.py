@@ -14,6 +14,7 @@ _COLUMN_MIGRATIONS = (
     "ALTER TABLE tr_konteks_operasional_opd ADD COLUMN IF NOT EXISTS indikator_program varchar",
     "ALTER TABLE tr_konteks_operasional_opd ADD COLUMN IF NOT EXISTS ref_subkegiatan varchar",
     "ALTER TABLE tr_konteks_operasional_opd ADD COLUMN IF NOT EXISTS ref_indikator varchar",
+    "ALTER TABLE tr_konteks_strategis_pemda ADD COLUMN IF NOT EXISTS prioritas_pembangunan varchar",
 )
 
 

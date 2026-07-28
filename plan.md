@@ -104,3 +104,16 @@ sidebar menu, background dengan gradasi
 
 text pada sidebar menu lebih kontras dengan background supaya lebih jelas terbaca
 
+kuisioner hanya boleh satu email satu tahun  
+
+
+
+Revisi Form 2.a — Konteks Strategis Pemda
+Periode yang dinilai : combobox : RPJMD 2025 - 2029  
+Visi : pilih dari tabel rpjmd_visi
+Misi Strategis RPJMD : pilih dari tabel rpjmd_misi (bisa pilih lebih dari satu)
+Penetapan Konteks Tujuan Risiko Strategis Pemda : pilih dari tabel rpjmd_tujuan (bisa pilih lebih dari satu)
+Penetapan Konteks Sasaran  Risiko Strategis Pemda : pilih dari tabel rpjmd_sasaran (bisa pilih lebih dari satu)
+Penetapan konteks IKU Risiko Strategis Pemda : pilih dari tabel renja_indikator where lvl < 3 and iku=1 (bisa pilih lebih dari satu)
+Prioritas pembangunan Daerah : pilih dari tabel ref_prioritas (bisa pilih lebih dari satu)
+Program Prioritas : pilih dari tabel rpjmd_program (bisa pilih lebih dari satu)

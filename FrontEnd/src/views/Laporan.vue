@@ -33,7 +33,9 @@ const sections = [
   { key: 'f2a', form: 'Form 2.a', label: 'Konteks Strategis Pemda' },
   { key: 'f2b', form: 'Form 2.b', label: 'Konteks Strategis OPD' },
   { key: 'f2c', form: 'Form 2.c', label: 'Konteks Operasional OPD' },
-  { key: 'f3', form: 'Form 3', label: 'Identifikasi Risiko' },
+  { key: 'f3a', form: 'Form 3.a', label: 'Identifikasi Risiko Strategis Pemda' },
+  { key: 'f3b', form: 'Form 3.b', label: 'Identifikasi Risiko Strategis OPD' },
+  { key: 'f3c', form: 'Form 3.c', label: 'Identifikasi Risiko Operasional OPD' },
   { key: 'f4', form: 'Form 4', label: 'Analisis Risiko' },
   { key: 'f5', form: 'Form 5', label: 'Daftar Risiko Prioritas' },
   { key: 'f7', form: 'Form 7', label: 'RTP atas Risiko' },
@@ -130,7 +132,10 @@ onMounted(async () => {
       :opd-name="opdName"
       :tahun="ctx.tahun"
     />
-    <Form3 v-if="isSel('f3') && d.f4" :data="d.f4" :opd-name="opdName" :tahun="ctx.tahun" />
+    <!-- Form 3.a/3.b/3.c dicetak terpisah (tiap section = halaman sendiri). -->
+    <Form3 v-if="isSel('f3a') && d.f4" :data="d.f4" jenis="strategis_pemda" :opd-name="opdName" :tahun="ctx.tahun" />
+    <Form3 v-if="isSel('f3b') && d.f4" :data="d.f4" jenis="strategis_opd" :opd-name="opdName" :tahun="ctx.tahun" />
+    <Form3 v-if="isSel('f3c') && d.f4" :data="d.f4" jenis="operasional_opd" :opd-name="opdName" :tahun="ctx.tahun" />
     <Form4 v-if="isSel('f4') && d.f4" :data="d.f4" :opd-name="opdName" :tahun="ctx.tahun" />
     <Form5 v-if="isSel('f5') && d.f5" :data="d.f5" :opd-name="opdName" :tahun="ctx.tahun" />
     <Form7 v-if="isSel('f7') && d.f7" :data="d.f7" :opd-name="opdName" :tahun="ctx.tahun" />

@@ -436,3 +436,162 @@ def list_renstra_program(opd_id: int, session: Session = Depends(get_session)):
         for r in rows
         if r.uraiprogram
     ]
+
+
+# ------------------ RPJMD & referensi (sumber pilihan Form 2.a) ---------------
+# Sama seperti renstra: opsi {value,label}, value = teks yang disimpan di kolom
+# konteks. Field multi-pilihan Form 2.a menyimpan value terpilih sebagai baris
+# yang dipisah newline.
+@router.get("/rpjmd/periode")
+def list_rpjmd_periode(session: Session = Depends(get_session)):
+    """Periode RPJMD (mis. 'RPJMD 2025 - 2029').
+
+    Tidak ada tabel master periode, jadi diturunkan dari `idperiode` rpjmd_tujuan
+    yang berformat YYYYYYYY (20252029).
+    """
+    rows = session.exec(
+        text(
+            "SELECT DISTINCT idperiode FROM rpjmd_tujuan "
+            "WHERE idperiode IS NOT NULL ORDER BY idperiode"
+        )
+    ).all()
+    out = []
+    for r in rows:
+        s = str(r.idperiode)
+        label = f"RPJMD {s[:4]} - {s[4:]}" if len(s) == 8 else f"RPJMD {s}"
+        out.append({"value": label, "label": label})
+    return out
+
+
+@router.get("/rpjmd/visi")
+def list_rpjmd_visi(session: Session = Depends(get_session)):
+    rows = session.exec(
+        text("SELECT visi FROM rpjmd_visi ORDER BY idperiode")
+    ).all()
+    return [{"value": r.visi, "label": r.visi} for r in rows if r.visi]
+
+
+@router.get("/rpjmd/misi")
+def list_rpjmd_misi(session: Session = Depends(get_session)):
+    rows = session.exec(
+        text("SELECT no, misi FROM rpjmd_misi ORDER BY no")
+    ).all()
+    return [
+        {"value": r.misi, "label": f"{r.no}. {r.misi}" if r.no else r.misi}
+        for r in rows
+        if r.misi
+    ]
+
+
+@router.get("/rpjmd/tujuan")
+def list_rpjmd_tujuan(session: Session = Depends(get_session)):
+    rows = session.exec(
+        text("SELECT no, uraitujuan FROM rpjmd_tujuan ORDER BY no")
+    ).all()
+    return [
+        {
+            "value": r.uraitujuan,
+            "label": f"{r.no}. {r.uraitujuan}" if r.no else r.uraitujuan,
+        }
+        for r in rows
+        if r.uraitujuan
+    ]
+
+
+@router.get("/rpjmd/sasaran")
+def list_rpjmd_sasaran(session: Session = Depends(get_session)):
+    """Label menyertakan tujuan induk agar sasaran sejenis mudah dibedakan."""
+    rows = session.exec(
+        text(
+            "SELECT s.no, s.uraisasaran, t.uraitujuan "
+            "FROM rpjmd_sasaran s "
+            "LEFT JOIN rpjmd_tujuan t ON t.idtujuan = s.idtujuan "
+            "ORDER BY t.no, s.no"
+        )
+    ).all()
+    return [
+        {
+            "value": r.uraisasaran,
+            "label": f"{r.no}. {r.uraisasaran}" if r.no else r.uraisasaran,
+            "induk": r.uraitujuan,
+            "induk_jenis": "Tujuan",
+        }
+        for r in rows
+        if r.uraisasaran
+    ]
+
+
+@router.get("/rpjmd/iku")
+def list_rpjmd_iku(tahun: int | None = None, session: Session = Depends(get_session)):
+    """IKU Pemda = indikator renja tingkat daerah (lvl < 3) ber-flag iku=1.
+
+    Induk indikator ikut dikembalikan (`induk`, `induk_jenis`) agar Form 2.a &
+    3.a bisa menampilkan/menurunkan tujuan/sasaran RPJMD-nya:
+      lvl 1 -> id_parent = rpjmd_tujuan.idtujuan
+      lvl 2 -> id_parent = rpjmd_sasaran.idsasaran
+
+    Difilter per tahun bila diminta; bila tahun tsb belum punya data renja,
+    kembali ke seluruh tahun (didedup per tolok ukur) agar pilihan tidak kosong.
+    """
+    sql = (
+        "SELECT ri.lvl, ri.tolok_ukur, ri.satuan, ri.target, "
+        "       COALESCE(t.uraitujuan, s.uraisasaran) AS induk "
+        "FROM renja_indikator ri "
+        "LEFT JOIN rpjmd_tujuan  t ON ri.lvl = 1 AND t.idtujuan  = ri.id_parent "
+        "LEFT JOIN rpjmd_sasaran s ON ri.lvl = 2 AND s.idsasaran = ri.id_parent "
+        "WHERE ri.lvl < 3 AND ri.iku = 1"
+    )
+
+    def _query(with_tahun: bool):
+        if with_tahun:
+            return session.exec(
+                text(sql + " AND ri.tahun = :tahun ORDER BY ri.lvl, ri.nomor")
+                .bindparams(tahun=tahun)
+            ).all()
+        return session.exec(text(sql + " ORDER BY ri.lvl, ri.nomor")).all()
+
+    rows = _query(tahun is not None)
+    if tahun is not None and not rows:
+        rows = _query(False)
+    out, seen = [], set()
+    for r in rows:
+        if not r.tolok_ukur or r.tolok_ukur in seen:
+            continue
+        seen.add(r.tolok_ukur)
+        extra = " ".join(x for x in (r.target, r.satuan) if x)
+        out.append(
+            {
+                "value": r.tolok_ukur,
+                "label": f"{r.tolok_ukur} ({extra})" if extra else r.tolok_ukur,
+                "induk": r.induk,
+                "induk_jenis": "Tujuan" if r.lvl == 1 else "Sasaran",
+            }
+        )
+    return out
+
+
+@router.get("/rpjmd/program")
+def list_rpjmd_program(session: Session = Depends(get_session)):
+    rows = session.exec(
+        text(
+            "SELECT DISTINCT kode_program, nama_program FROM rpjmd_program "
+            "WHERE nama_program IS NOT NULL ORDER BY kode_program"
+        )
+    ).all()
+    return [
+        {"value": r.nama_program, "label": f"{r.kode_program} — {r.nama_program}"}
+        for r in rows
+    ]
+
+
+@router.get("/ref/prioritas")
+def list_ref_prioritas(session: Session = Depends(get_session)):
+    """Prioritas pembangunan daerah (Form 2.a)."""
+    rows = session.exec(
+        text("SELECT id, prioritas FROM ref_prioritas ORDER BY id")
+    ).all()
+    return [
+        {"value": r.prioritas, "label": f"{r.id}. {r.prioritas}"}
+        for r in rows
+        if r.prioritas
+    ]

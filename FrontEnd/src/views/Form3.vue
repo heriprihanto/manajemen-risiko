@@ -34,8 +34,34 @@ const isNew = ref(false)
 // Form 2.b — daftar konteks strategis OPD sebagai sumber pilihan Form 3.b.
 const konteksOptions = ref([])
 
+// Form 2.a — daftar Penetapan Konteks IKU sebagai sumber pilihan Form 3.a.
+const ikuOptions = ref([])
+
 const isOperasional = computed(() => props.jenis === 'operasional_opd')
 const isStrategisOpd = computed(() => props.jenis === 'strategis_opd')
+const isStrategisPemda = computed(() => props.jenis === 'strategis_pemda')
+
+// Field multi-pilihan Form 2.a disimpan sebagai teks dipisah newline.
+const toList = (v) => (v ? String(v).split('\n').filter(Boolean) : [])
+
+// Nilai lama yang tidak (lagi) ada di Form 2.a tetap ditampilkan sebagai opsi
+// supaya tidak hilang saat baris risiko disimpan ulang.
+const ikuSelectOptions = computed(() => {
+  const cur = (editing.value.indikator_kinerja || '').trim()
+  if (!cur || ikuOptions.value.some((o) => o.value === cur)) return ikuOptions.value
+  return [...ikuOptions.value, { value: cur, label: cur }]
+})
+const selectedIku = computed(() =>
+  ikuOptions.value.find((o) => o.value === editing.value.indikator_kinerja),
+)
+
+// IKU Pemda menempel pada tujuan (lvl 1) atau sasaran (lvl 2) RPJMD, jadi
+// Tujuan/Sasaran Strategis diturunkan dari IKU yang dipilih (masih bisa
+// disunting bila perlu).
+function applyIku(e) {
+  const iku = ikuOptions.value.find((o) => o.value === e?.value)
+  if (iku?.induk) editing.value.tujuan_sasaran = iku.induk
+}
 
 // Label ringkas satu baris Form 2.b: pakai penetapan konteks bila diisi,
 // jika tidak gabungkan tujuan/sasaran/program.
@@ -127,6 +153,20 @@ async function load() {
           k.program ||
           '(subkegiatan)',
       }))
+  } else if (isStrategisPemda.value) {
+    // Form 3.a: Indikator Kinerja dipilih dari Penetapan Konteks IKU Form 2.a
+    // (konteks Pemda berlaku untuk seluruh OPD, jadi hanya difilter per tahun).
+    // Daftar master dipakai untuk melengkapi tujuan/sasaran RPJMD induk IKU.
+    const [pemda, masterIku] = await Promise.all([
+      api.get('/konteks/pemda', { params: { tahun: ctx.tahun } })
+        .then((r) => r.data).catch(() => null),
+      api.get('/master/rpjmd/iku', { params: { tahun: ctx.tahun } })
+        .then((r) => r.data).catch(() => []),
+    ])
+    const byValue = new Map((masterIku || []).map((m) => [m.value, m]))
+    ikuOptions.value = toList(pemda?.penetapan_konteks_iku).map(
+      (v) => byValue.get(v) || { value: v, label: v },
+    )
   }
   const { data } = await api.get('/risiko', {
     params: { opd_id: ctx.opdId, tahun: ctx.tahun, jenis: props.jenis },
@@ -266,13 +306,40 @@ onMounted(load)
         </div>
       </template>
       <template v-else>
-        <div>
+        <div style="grid-column: 1 / -1">
+          <label class="muted lbl">Indikator Kinerja (dari Form 2.a)</label>
+          <Select
+            v-model="editing.indikator_kinerja"
+            :options="ikuSelectOptions"
+            optionLabel="label"
+            optionValue="value"
+            filter
+            showClear
+            placeholder="Pilih IKU yang dinilai"
+            style="width: 100%"
+            @change="applyIku"
+          >
+            <template #option="{ option }">
+              <div>
+                <div>{{ option.label }}</div>
+                <small v-if="option.induk" class="muted">
+                  {{ option.induk_jenis }}: {{ option.induk }}
+                </small>
+              </div>
+            </template>
+          </Select>
+          <small v-if="!ikuOptions.length" class="muted">
+            Belum ada Penetapan Konteks IKU pada Form 2.a — Konteks Strategis Pemda untuk tahun ini.
+          </small>
+        </div>
+        <div v-if="selectedIku?.induk" style="grid-column: 1 / -1" class="konteks-ref">
+          <div>
+            <span class="muted">{{ selectedIku.induk_jenis }} RPJMD:</span> {{ selectedIku.induk }}
+          </div>
+        </div>
+        <div style="grid-column: 1 / -1">
           <label class="muted lbl">Tujuan/Sasaran Strategis</label>
           <Textarea v-model="editing.tujuan_sasaran" autoResize rows="2" style="width: 100%" />
-        </div>
-        <div>
-          <label class="muted lbl">Indikator Kinerja</label>
-          <Textarea v-model="editing.indikator_kinerja" autoResize rows="2" style="width: 100%" />
         </div>
       </template>
       <div style="grid-column: 1 / -1">
