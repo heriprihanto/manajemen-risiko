@@ -88,6 +88,7 @@ const navGroups = [
     admin: true,
     items: [
       ['kelola-kuesioner', 'Kelola Kuesioner CEE', 'pi-list-check'],
+      ['pengaturan', 'Pengaturan Aplikasi', 'pi-cog'],
     ],
   },
 ]
@@ -153,7 +154,11 @@ async function ensureOpd() {
   opdLoading = true
   opdError.value = ''
   try {
-    await ctx.loadOpd(auth.allowedOpds)
+    // Tahun default (Pengaturan) tidak boleh menggagalkan pemuatan OPD.
+    await Promise.all([
+      ctx.loadOpd(auth.allowedOpds),
+      ctx.loadPengaturan().catch(() => null),
+    ])
   } catch (e) {
     // 401 sudah ditangani interceptor api.js (redirect ke login).
     if (e.response?.status !== 401) opdError.value = 'Gagal memuat daftar OPD.'

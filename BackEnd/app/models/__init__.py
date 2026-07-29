@@ -18,6 +18,7 @@ from app.models.master import (
     Opd,
 )
 from app.models.monitoring import Infokom, MonitoringPi, MonitoringRiskEvent
+from app.models.pengaturan import SETTINGS_ID, Pengaturan
 from app.models.risiko import AnalisisRisiko, Risiko, RtpRisiko
 
 __all__ = [
@@ -40,4 +41,6 @@ __all__ = [
     "Infokom",
     "MonitoringPi",
     "MonitoringRiskEvent",
+    "Pengaturan",
+    "SETTINGS_ID",
 ]

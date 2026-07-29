@@ -30,6 +30,7 @@ const routes = [
   { path: '/form10', name: 'form10', component: () => import('@/views/Form10.vue'), meta: { title: 'Form 10 — Monitoring Risk Event & RTP' } },
 
   { path: '/kelola-kuesioner', name: 'kelola-kuesioner', component: () => import('@/views/KelolaKuesioner.vue'), meta: { title: 'Kelola Kuesioner CEE', admin: true } },
+  { path: '/pengaturan', name: 'pengaturan', component: () => import('@/views/Pengaturan.vue'), meta: { title: 'Pengaturan Aplikasi', admin: true } },
 ]
 
 const router = createRouter({

@@ -32,6 +32,12 @@ const skala = [
 ]
 
 const alreadySubmitted = computed(() => !!status.value?.submitted)
+// Jadwal survei ditetapkan Admin (halaman Pengaturan); backend tetap menolak
+// submit di luar rentang, ini hanya agar formulir tidak tampil percuma.
+const jadwal = computed(() => info.value?.jadwal || null)
+const surveiTutup = computed(() => !!jadwal.value && !jadwal.value.dibuka)
+const fmtTgl = (s) =>
+  s ? new Date(`${s}T00:00:00`).toLocaleDateString('id-ID', { dateStyle: 'long' }) : null
 const totalQuestions = computed(() =>
   kuesioner.value.reduce((n, k) => n + k.pertanyaan.length, 0),
 )
@@ -180,8 +186,25 @@ onMounted(() => {
     </header>
 
     <main class="survei-body">
+      <!-- Di luar jadwal: form tidak ditampilkan sama sekali. Responden yang
+           sudah mengisi tetap bisa melihat ringkasannya di bawah. -->
+      <div v-if="surveiTutup && !alreadySubmitted" class="login-card">
+        <i class="pi pi-calendar-times" style="font-size: 2.4rem; color: #f59e0b" />
+        <h2>Survei Belum Dibuka</h2>
+        <p class="muted">
+          {{ jadwal.alasan }}
+          <br v-if="jadwal.mulai || jadwal.selesai" />
+          <template v-if="jadwal.mulai || jadwal.selesai">
+            Jadwal pengisian:
+            <strong>{{ fmtTgl(jadwal.mulai) || 'tanpa batas awal' }}</strong>
+            s/d
+            <strong>{{ fmtTgl(jadwal.selesai) || 'tanpa batas akhir' }}</strong>.
+          </template>
+        </p>
+      </div>
+
       <!-- Belum login -->
-      <div v-if="authReady && !user" class="login-card">
+      <div v-else-if="authReady && !user" class="login-card">
         <i class="pi pi-user-edit" style="font-size: 2.4rem; color: #3b82f6" />
         <h2>Masuk untuk Mengisi Survei</h2>
         <p class="muted">

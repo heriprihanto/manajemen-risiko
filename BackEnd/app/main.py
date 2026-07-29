@@ -12,6 +12,7 @@ from app.routers import (
     laporan,
     master,
     monitoring,
+    pengaturan,
     risiko,
     survei,
 )
@@ -32,6 +33,8 @@ app.include_router(auth.router, prefix=API)
 app.include_router(survei.router, prefix=API)
 # Master/referensi: cukup terautentikasi.
 app.include_router(master.router, prefix=API, dependencies=[UserDep])
+# Pengaturan: baca cukup terautentikasi, tulis dijaga AdminDep di endpoint-nya.
+app.include_router(pengaturan.router, prefix=API, dependencies=[UserDep])
 # Data transaksi: terautentikasi + dibatasi per OPD (Admin bebas, OPD hanya miliknya).
 scoped = [OpdScopeDep]
 app.include_router(cee.router, prefix=API, dependencies=scoped)

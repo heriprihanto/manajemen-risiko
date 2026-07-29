@@ -18,6 +18,10 @@ export const useContextStore = defineStore('context', {
       opdList: [],
       opdId: saved.opdId || null,
       tahun: saved.tahun || new Date().getFullYear(),
+      // Menandai pengguna sudah memilih tahun sendiri; selama false, tahun
+      // mengikuti default yang ditetapkan Admin di halaman Pengaturan.
+      tahunManual: !!saved.tahunManual,
+      tahunDefault: null,
       loaded: false,
     }
   },
@@ -39,18 +43,43 @@ export const useContextStore = defineStore('context', {
       this.loaded = true
       this.persist()
     },
+    // Tahun penilaian default dari halaman Pengaturan (Admin). Hanya dipakai
+    // selama pengguna belum pernah memilih tahun sendiri di topbar.
+    async loadPengaturan() {
+      const { data } = await api.get('/pengaturan')
+      this.tahunDefault = data.tahun_default || null
+      if (this.tahunDefault && !this.tahunManual) {
+        this.tahun = this.tahunDefault
+        this.persist()
+      }
+      return data
+    },
     setOpd(id) {
       this.opdId = id
       this.persist()
     },
     setTahun(t) {
       this.tahun = t
+      this.tahunManual = true
       this.persist()
+    },
+    // Dipakai saat Admin mengubah tahun default: sesi ikut pindah tahun tanpa
+    // dianggap pilihan manual.
+    applyTahunDefault(t) {
+      this.tahunDefault = t
+      if (!this.tahunManual) {
+        this.tahun = t
+        this.persist()
+      }
     },
     persist() {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ opdId: this.opdId, tahun: this.tahun }),
+        JSON.stringify({
+          opdId: this.opdId,
+          tahun: this.tahun,
+          tahunManual: this.tahunManual,
+        }),
       )
     },
     get params() {

@@ -20,6 +20,7 @@ from app.models import (
     KuesionerPertanyaan,
     Opd,
 )
+from app.routers.pengaturan import get_pengaturan, survei_window
 from app.services.firebase_auth import current_user
 
 router = APIRouter(prefix="/survei", tags=["survei"])
@@ -32,10 +33,13 @@ def info(session: Session = Depends(get_session)):
             select(KuesionerPertanyaan).where(KuesionerPertanyaan.aktif == 1)
         ).all()
     )
+    # Tahun & jadwal mengikuti Pengaturan yang diatur Admin.
+    p = get_pengaturan(session)
     return {
         "judul": "Survei Penilaian Lingkungan Pengendalian Intern (CEE)",
         "instansi": settings.PROJECT_NAME,
-        "tahun": settings.TAHUN_ANGGARAN,
+        "tahun": p.tahun_default or settings.TAHUN_ANGGARAN,
+        "jadwal": survei_window(p),
         "jumlah_pertanyaan": n,
         "skala": [
             {"nilai": 1, "label": "Tidak Setuju"},
@@ -167,6 +171,12 @@ def submit(
         raise HTTPException(400, "opd_id dan tahun wajib diisi")
     if not session.get(Opd, opd_id):
         raise HTTPException(404, "OPD tidak ditemukan")
+
+    # Di luar jadwal yang ditetapkan Admin, pengisian ditolak. Dicek di sini
+    # (bukan hanya di UI) supaya tidak bisa dilewati lewat request langsung.
+    jadwal = survei_window(get_pengaturan(session))
+    if not jadwal["dibuka"]:
+        raise HTTPException(403, jadwal["alasan"])
 
     # Email wajib — jadi kunci "satu email satu tahun".
     email = _norm_email(user.get("email"))
